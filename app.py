@@ -1,38 +1,52 @@
 import streamlit as st
 import pandas as pd
 
-# URL del archivo CSV en formato raw de GitHub (ajusta esta URL a tu repositorio)
-url = 'https://raw.githubusercontent.com/tu-usuario/streamlit-dashboard/main/data/datos_mercado.csv'
+# URL del CSV (ajusta con tu repositorio real)
+url = 'https://raw.githubusercontent.com/tu-usuario/tu-repo/main/datos_mercado.csv'
 
 @st.cache_data
-def load_data():
-    df = pd.read_csv(url)
-    return df
+def cargar_datos():
+    return pd.read_csv(url)
 
-df = load_data()
+df = cargar_datos()
 
 st.title("Dashboard del Mercado de Muebles")
 
-# Mostrar tabla completa
-st.subheader("Datos Completos")
-st.dataframe(df)
+# Mostrar bloques disponibles
+bloques = df['Bloque'].dropna().unique()
+bloque_seleccionado = st.selectbox("Selecciona el bloque de datos", bloques)
 
-# Filtro por categoría
-categorias = df['Categoria'].dropna().unique()
-categoria_seleccionada = st.selectbox("Filtrar por categoría", categorias)
+df_filtrado = df[df['Bloque'] == bloque_seleccionado]
 
-df_filtrado = df[df['Categoria'] == categoria_seleccionada]
+st.subheader(f"Datos: {bloque_seleccionado}")
+st.dataframe(df_filtrado.reset_index(drop=True))
 
-st.subheader(f"Subcategorías en {categoria_seleccionada}")
-st.dataframe(df_filtrado[['Subcategoria', 
-                          'Valor_2024_USD_mil_millones', 
-                          'Valor_2025_USD_mil_millones', 
-                          'Valor_2030_USD_mil_millones', 
-                          'Valor_2032_USD_mil_millones', 
-                          'Valor_2033_USD_mil_millones', 
-                          'CAGR_%', 
-                          'CAGR_2024_2029_%', 
-                          'Proyección_2029_USD_mil_millones', 
-                          'Comentario']])
+# Mostrar solo columnas con datos relevantes
+columnas_numericas = [
+    'Valor_2024_USD_mil_millones',
+    'Valor_2025_USD_mil_millones',
+    'Valor_2030_USD_mil_millones',
+    'Valor_2032_USD_mil_millones',
+    'Valor_2033_USD_mil_millones',
+    'CAGR_%',
+    'CAGR_2024_2029_%',
+    'CAGR_2025_2030_%',
+    'Crecimiento_%',
+    'Proyección_2029_USD_mil_millones',
+    'Tamaño_mercado_global_tropical_USD_mil_millones',
+    'Proyección_muebles_lujo_USD_millones',
+    'Valor_2025_USD_millones',
+]
+
+df_numerico = df_filtrado[['Categoria'] + columnas_numericas].dropna(how='all', axis=1)
+st.subheader("Valores Numéricos")
+st.dataframe(df_numerico.reset_index(drop=True))
+
+# Comentarios si existen
+comentarios = df_filtrado['Comentario'].dropna()
+if not comentarios.empty:
+    st.subheader("Comentarios")
+    for c in comentarios:
+        st.write(f"• {c}")
 
 
